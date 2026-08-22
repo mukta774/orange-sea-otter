@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Analyzer</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 900px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        input[type=text], input[type=file], textarea {
+            width: 100%; margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;
+        }
+        textarea { min-height: 140px; resize: vertical; }
+        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        button:hover { background-color: #0056b3; }
+        .results { margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; }
+        h2 { color: #333; }
+        h3 { color: #555; }
+        pre { background-color: #f4f4f4; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }
+        .error { color: #b00020; font-weight: bold; }
+        .info { color: #0b5394; font-weight: bold; }
+        .score-big { font-size: 2em; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Resume-Job Match Analyzer</h1>
+        {% if error %}
+        <p class="error">{{ error }}</p>
+        {% endif %}
+        {% if info %}
+        <p class="info">{{ info }}</p>
+        {% endif %}
+        <form method="POST" enctype="multipart/form-data">
+            <h2>1. Job details (optional fetch)</h2>
+            <input type="text" name="company_name" placeholder="Company name (e.g. Google)" value="{{ company_name or '' }}">
+            <input type="text" name="job_title" placeholder="Job title (e.g. Data Analyst)" value="{{ job_title or '' }}">
+            <input type="text" name="job_location" placeholder="Location (optional)" value="{{ job_location or '' }}">
+            <button type="submit" name="action" value="fetch_job">Fetch Job Description</button>
+
+            <h2>2. Job description text (manual or fetched)</h2>
+            <textarea name="job_description_text" placeholder="Paste job description here, or fetch it above.">{{ job_description_text or '' }}</textarea>
+
+            <h2>3. Required Skills (optional if job description exists)</h2>
+            <input type="text" name="required_skills" placeholder="e.g. Python, SQL, AWS, Docker, Machine Learning"
+                   value="{{ required_skills_raw or '' }}">
+            <p style="color:#777; font-size: 0.9em;">Separate each skill with a comma. If left empty, skills are inferred from job description.</p>
+
+            <h2>4. Upload Your Resume (PDF)</h2>
+            <input type="file" name="resume_pdf" accept="application/pdf">
+            <button type="submit" name="action" value="analyze_match">Analyze Match</button>
+        </form>
+
+        {% if job_fetch %}
+        <div class="results">
+            <h2>Fetched Job Posting:</h2>
+            <pre>Company: {{ job_fetch.company_name }}
+Title: {{ job_fetch.title }}
+Location: {{ job_fetch.location }}
+Source: {{ job_fetch.source }}
+URL: {{ job_fetch.url }}</pre>
+        </div>
+        {% endif %}
+
+        {% if results %}
+        <div class="results">
+            <h2>Analysis Results:</h2>
+
+            <h3>Overall Skill Match Score:</h3>
+            <p class="score-big">{{ results.skill_match_score }}%</p>
+
+            <h3>Skills Comparison:</h3>
+            <pre>{% for skill, has_it in results.skill_comparison %}{{ '[YES]' if has_it else '[NO]' }} {{ skill }}
+{% endfor %}</pre>
+
+            <h3>Required Skills Source:</h3>
+            <pre>{{ results.required_skills_source }}</pre>
+
+            <h3>Matched Skills:</h3>
+            <pre>{{ results.matched_skills or 'None found' }}</pre>
+
+            <h3>Missing Skills:</h3>
+            <pre>{{ results.missing_skills or 'None - great match!' }}</pre>
+
+            <h3>All Skills Detected in Resume:</h3>
+            <pre>{{ results.extracted_skills or 'None detected' }}</pre>
+
+            <h3>Education Section:</h3>
+            <pre>{{ results.education_section }}</pre>
+
+            <h3>Experience Section:</h3>
+            <pre>{{ results.experience_section }}</pre>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
